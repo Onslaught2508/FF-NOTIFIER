@@ -1,6 +1,6 @@
 # FF-NOTIFIER 🎮
 
-Automatischer Verfügbarkeits-Checker für **Final Fantasy Rebirth** Collector's Edition und Goods Box im Square Enix Store.
+Automatischer Verfügbarkeits-Checker für **Final Fantasy Resonance** Collector's Edition und Goods Box im Square Enix Store.
 
 ## Was macht dieser Bot?
 
@@ -12,8 +12,8 @@ Automatischer Verfügbarkeits-Checker für **Final Fantasy Rebirth** Collector's
 
 | Produkt | URL |
 |---|---|
-| Final Fantasy VII Rebirth – Collector's Edition (PS5) | [Link](https://store.eu.square-enix-games.com/de_DE/product/870382/final-fantasy-vii-rebirth-collectors-edition-ps5) |
-| Final Fantasy VII Rebirth – Collector's Goods Box (ohne Spiel) | [Link](https://store.eu.square-enix-games.com/de_DE/product/870388/final-fantasy-vii-rebirth-collectors-goods-box-ohne-spiel) |
+| Final Fantasy Resonance – Collector's Edition (PS5) | [Link](https://de.store.square-enix-games.com/final-fantasy-resonance) |
+| Final Fantasy Resonance – Collector's Goods Box (ohne Spiel) | [Link](https://de.store.square-enix-games.com/final-fantasy-resonance-collector_s-edition-goods-box) |
 
 ## Technischer Aufbau
 
