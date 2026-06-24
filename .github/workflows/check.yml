@@ -1,0 +1,26 @@
+name: FF Availability Check
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'   # alle 5 Minuten
+  workflow_dispatch:          # manueller Start per Knopf
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: requests installieren
+        run: pip install requests
+
+      - name: Bot ausführen
+        env:
+          NTFY_URL: ${{ secrets.NTFY_URL }}
+        run: python bot.py
