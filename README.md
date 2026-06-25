@@ -1,42 +1,90 @@
-# FF-NOTIFIER 🎮
+# FF Availability Bot
 
-Automatischer Verfügbarkeits-Checker für **Final Fantasy Resonance** Collector's Edition und Goods Box im Square Enix Store.
-
-## Was macht dieser Bot?
-
-- Prüft alle 5 Minuten die Produktverfügbarkeit im Square Enix Store
-- Sendet eine Push-Benachrichtigung via [ntfy](https://ntfy.sh), sobald ein Produkt verfügbar ist
-- Läuft vollautomatisch über GitHub Actions – kein eigener Server nötig
+Automatischer Verfügbarkeits-Check für ausgewählte Produkte im Square Enix Store (DE).  
+Bei Verfügbarkeit kommt eine Push-Benachrichtigung via [ntfy](https://ntfy.sh).
 
 ## Überwachte Produkte
 
-| Produkt | URL |
+Konfiguriert in `products.json`:
+
+| Produkt | Methode |
 |---|---|
-| Final Fantasy Resonance – Collector's Edition (PS5) | [Link](https://de.store.square-enix-games.com/final-fantasy-resonance) |
-| Final Fantasy Resonance – Collector's Goods Box (ohne Spiel) | [Link](https://de.store.square-enix-games.com/final-fantasy-resonance-collector_s-edition-goods-box) |
+| FFR Collector's Edition PS5 | BigCommerce API |
+| FFR Collector's Goods Box (ohne Spiel) | Keyword-Scan |
 
-## Technischer Aufbau
+## Funktionsweise
 
-- **Sprache:** Python 3.11
-- **Plattform:** GitHub Actions (kostenlos, 24/7)
-- **Benachrichtigung:** [ntfy.sh](https://ntfy.sh) (Push auf iOS/Android/Desktop)
-- **Intervall:** alle 5 Minuten via Cron-Job
+- GitHub Actions prüft alle **5 Minuten** die Verfügbarkeit
+- Bei Verfügbarkeit → ntfy-Benachrichtigung mit `priority: urgent`
+- Bei dauerhaftem Ausfall aller Checks → ntfy-Benachrichtigung mit `priority: high`
+- Täglich um **10:00 Uhr MESZ** (08:00 UTC) → stiller Heartbeat-Check via ntfy
+- Netzwerkfehler werden bis zu **3× wiederholt** (5s Pause) bevor ein Fehler gemeldet wird
+- Hängende Jobs werden nach **2 Minuten** automatisch abgebrochen
+
+## Projektstruktur
+
+```
+FF-NOTIFIER/
+├── .github/
+│   └── workflows/
+│       ├── check.yml          # Produktcheck alle 5 Minuten
+│       └── heartbeat.yml      # Täglicher Lebenszeichen-Check
+├── bot.py                     # Hauptskript
+├── products.json              # Produktkonfiguration
+└── README.md
+```
 
 ## Konfiguration
 
-Der ntfy-Kanal wird als **GitHub Actions Secret** hinterlegt und ist nicht im Code sichtbar:
+### Neues Produkt hinzufügen
 
-| Secret | Beschreibung |
+`products.json` editieren – `bot.py` bleibt unverändert.
+
+**Typ `bc_api`** – für BigCommerce-API-Produkte:
+```json
+{
+  "id":      "mein-produkt",
+  "name":    "Produktname",
+  "type":    "bc_api",
+  "payload": {
+    "product_id":      "1234",
+    "attribute[1004]": "5678"
+  },
+  "url": "https://de.store.square-enix-games.com/..."
+}
+```
+
+**Typ `keyword`** – für einfache Seiten ohne API:
+```json
+{
+  "id":   "mein-produkt",
+  "name": "Produktname",
+  "type": "keyword",
+  "url":  "https://de.store.square-enix-games.com/..."
+}
+```
+
+### GitHub Secret
+
+| Secret | Inhalt |
 |---|---|
-| `NTFY_URL` | Vollständige ntfy-URL, z. B. `https://ntfy.sh/dein-kanal` |
+| `NTFY_URL` | Vollständige ntfy-URL, z. B. `https://ntfy.sh/mein-topic` |
 
-→ Settings → Secrets and variables → Actions → New repository secret
+Einzutragen unter: **Settings → Secrets and variables → Actions → New repository secret**
 
-## Lokale Nutzung
+## Benachrichtigungen
+
+| Ereignis | Titel | Priority |
+|---|---|---|
+| Produkt verfügbar | `VERFUEGBAR: <Name>` | `urgent` |
+| Alle Checks fehlgeschlagen | `⚠️ Bot-Fehler: Alle Checks fehlgeschlagen` | `high` |
+| Täglicher Heartbeat | `FF Bot läuft` | `low` |
+
+## Lokaler Test
 
 ```bash
 pip install requests
-export NTFY_URL="https://ntfy.sh/dein-kanal"
+export NTFY_URL="https://ntfy.sh/mein-topic"
 python bot.py
 ```
 
