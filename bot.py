@@ -4,28 +4,22 @@ import logging
 import sys
 import os
 import time
+import json
 from datetime import datetime
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-LOG_FILE = os.path.join(BASE_DIR, "bot.log")
+LOG_FILE  = os.path.join(BASE_DIR, "bot.log")
 
 BC_API_URL = "https://de.store.square-enix-games.com/remote/v1/product-attributes/3473"
 
-PRODUCTS = [
-    {
-        "id":      "ffr-ce-ps5",
-        "name":    "FFR Collector's Edition PS5",
-        "type":    "bc_api",
-        "payload": {"product_id": "3473", "attribute[1004]": "1488", "attribute[1005]": "1491"},
-        "url":     "https://de.store.square-enix-games.com/final-fantasy-resonance",
-    },
-    {
-        "id":      "ffr-goods-box",
-        "name":    "FFR Collector's Goods Box (ohne Spiel)",
-        "type":    "keyword",
-        "url":     "https://de.store.square-enix-games.com/final-fantasy-resonance-collector_s-edition-goods-box",
-    },
-]
+# Produkte aus externer Datei laden
+PRODUCTS_FILE = os.path.join(BASE_DIR, "products.json")
+try:
+    with open(PRODUCTS_FILE, encoding="utf-8") as f:
+        PRODUCTS = json.load(f)
+except Exception as e:
+    print(f"[FATAL] products.json nicht lesbar: {e}")
+    sys.exit(1)
 
 NTFY_URL = os.environ.get("NTFY_URL", "")
 
