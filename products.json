@@ -1,0 +1,19 @@
+[
+  {
+    "id":      "ffr-ce-ps5",
+    "name":    "FFR Collector's Edition PS5",
+    "type":    "bc_api",
+    "payload": {
+      "product_id":       "3473",
+      "attribute[1004]":  "1488",
+      "attribute[1005]":  "1491"
+    },
+    "url": "https://de.store.square-enix-games.com/final-fantasy-resonance"
+  },
+  {
+    "id":   "ffr-goods-box",
+    "name": "FFR Collector's Goods Box (ohne Spiel)",
+    "type": "keyword",
+    "url":  "https://de.store.square-enix-games.com/final-fantasy-resonance-collector_s-edition-goods-box"
+  }
+]
