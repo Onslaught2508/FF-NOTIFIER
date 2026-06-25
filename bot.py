@@ -119,6 +119,7 @@ def send_ntfy(title, message, priority="urgent", tags="white_check_mark,shopping
 
 def main():
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    results = []
 
     for p in PRODUCTS:
         if p["type"] == "bc_api":
@@ -127,12 +128,25 @@ def main():
             status, detail = check_keyword(p["url"])
 
         log.info(f"{p['name']}: {status} ({detail})")
+        results.append((p, status, detail))
 
         if status == "available":
             send_ntfy(
                 title=f"VERFUEGBAR: {p['name']}",
                 message=f"Jetzt kaufen!\nZeit: {now}\nURL:  {p['url']}",
             )
+
+    # Fehler-Benachrichtigung: alle Produkte im Fehlerzustand
+    error_products = [(p, d) for p, s, d in results if s == "error"]
+    if len(error_products) == len(PRODUCTS):
+        fehler_details = "\n".join(f"- {p['name']}: {d}" for p, d in error_products)
+        send_ntfy(
+            title="⚠️ Bot-Fehler: Alle Checks fehlgeschlagen",
+            message=f"Zeit: {now}\nKein Produkt konnte geprüft werden.\n\n{fehler_details}",
+            priority="high",
+            tags="warning,robot",
+        )
+        log.error("Alle Checks fehlgeschlagen – Fehler-Benachrichtigung gesendet.")
 
 if __name__ == "__main__":
     main()
