@@ -1,0 +1,22 @@
+name: FF Bot Heartbeat
+
+on:
+  schedule:
+    - cron: '0 8 * * *'   # täglich um 08:00 UTC (= 10:00 MESZ)
+  workflow_dispatch:        # manueller Test per Knopf
+
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Heartbeat senden
+        env:
+          NTFY_URL: ${{ secrets.NTFY_URL }}
+        run: |
+          curl -s \
+            -H "Title: FF Bot läuft" \
+            -H "Priority: low" \
+            -H "Tags: white_check_mark,robot" \
+            -d "Täglicher Check: Bot ist aktiv. $(date '+%Y-%m-%d %H:%M') UTC" \
+            "$NTFY_URL"
