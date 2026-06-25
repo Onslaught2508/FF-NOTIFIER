@@ -3,6 +3,7 @@ import requests
 import logging
 import sys
 import os
+import time
 from datetime import datetime
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -34,6 +35,9 @@ HEADERS = {
     "X-Requested-With": "XMLHttpRequest",
 }
 
+RETRY_COUNT = 3
+RETRY_DELAY = 5  # Sekunden zwischen Versuchen
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -41,42 +45,58 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
+
 def check_bc_api(payload):
-    try:
-        resp = requests.post(
-            BC_API_URL,
-            data={**payload, "action": "add", "qty[]": "1"},
-            headers=HEADERS,
-            timeout=15,
-        )
-        resp.raise_for_status()
-        data        = resp.json().get("data", {})
-        instock     = data.get("instock", False)
-        stock       = data.get("stock", 0)
-        purchasable = data.get("purchasable", False)
-        msg         = data.get("purchasing_message") or data.get("stock_message") or ""
-        if instock and purchasable and not msg:
-            return "available", f"instock=true, stock={stock}"
-        else:
-            return "unavailable", f"instock={instock}, stock={stock}, msg='{msg}'"
-    except Exception as e:
-        log.error(f"API-Fehler: {e}")
-        return "error", str(e)
+    last_error = None
+    for attempt in range(1, RETRY_COUNT + 1):
+        try:
+            resp = requests.post(
+                BC_API_URL,
+                data={**payload, "action": "add", "qty[]": "1"},
+                headers=HEADERS,
+                timeout=15,
+            )
+            resp.raise_for_status()
+            data        = resp.json().get("data", {})
+            instock     = data.get("instock", False)
+            stock       = data.get("stock", 0)
+            purchasable = data.get("purchasable", False)
+            msg         = data.get("purchasing_message") or data.get("stock_message") or ""
+            if instock and purchasable and not msg:
+                return "available", f"instock=true, stock={stock}"
+            else:
+                return "unavailable", f"instock={instock}, stock={stock}, msg='{msg}'"
+        except Exception as e:
+            last_error = e
+            log.warning(f"  API-Fehler (Versuch {attempt}/{RETRY_COUNT}): {e}")
+            if attempt < RETRY_COUNT:
+                time.sleep(RETRY_DELAY)
+    log.error(f"  API dauerhaft nicht erreichbar nach {RETRY_COUNT} Versuchen.")
+    return "error", str(last_error)
+
 
 def check_keyword(url):
-    try:
-        resp = requests.get(url, headers={**HEADERS, "Accept": "text/html"}, timeout=15)
-        resp.raise_for_status()
-    except Exception as e:
-        return "error", str(e)
-    text = resp.text.lower()
-    if "derzeit nicht verfügbar" in text or "out of stock" in text:
-        return "unavailable", "Nicht-verfuegbar-Text gefunden"
-    if "in den warenkorb" in text or "btnatc" in text:
-        return "available", "Warenkorb-Element gefunden"
-    return "unknown", "kein eindeutiger Status"
+    last_error = None
+    for attempt in range(1, RETRY_COUNT + 1):
+        try:
+            resp = requests.get(url, headers={**HEADERS, "Accept": "text/html"}, timeout=15)
+            resp.raise_for_status()
+            text = resp.text.lower()
+            if "derzeit nicht verfügbar" in text or "out of stock" in text:
+                return "unavailable", "Nicht-verfuegbar-Text gefunden"
+            if "in den warenkorb" in text or "btnatc" in text:
+                return "available", "Warenkorb-Element gefunden"
+            return "unknown", "kein eindeutiger Status"
+        except Exception as e:
+            last_error = e
+            log.warning(f"  HTTP-Fehler (Versuch {attempt}/{RETRY_COUNT}): {e}")
+            if attempt < RETRY_COUNT:
+                time.sleep(RETRY_DELAY)
+    log.error(f"  Seite dauerhaft nicht erreichbar nach {RETRY_COUNT} Versuchen.")
+    return "error", str(last_error)
 
-def send_ntfy(title, message):
+
+def send_ntfy(title, message, priority="urgent", tags="white_check_mark,shopping"):
     if not NTFY_URL:
         log.warning("NTFY_URL nicht gesetzt – keine Benachrichtigung.")
         return
@@ -86,8 +106,8 @@ def send_ntfy(title, message):
             data=message.encode("utf-8"),
             headers={
                 "Title":    title.encode("utf-8"),
-                "Priority": "urgent",
-                "Tags":     "white_check_mark,shopping",
+                "Priority": priority,
+                "Tags":     tags,
             },
             timeout=10,
         )
@@ -95,6 +115,7 @@ def send_ntfy(title, message):
         log.info(f"  ntfy gesendet: {title}")
     except Exception as e:
         log.error(f"  ntfy-Fehler: {e}")
+
 
 def main():
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
