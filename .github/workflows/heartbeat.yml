@@ -18,5 +18,5 @@ jobs:
             -H "Title: FF Bot läuft" \
             -H "Priority: low" \
             -H "Tags: white_check_mark,robot" \
-            -d "Täglicher Check: Bot ist aktiv. $(date '+%Y-%m-%d %H:%M') UTC" \
+            -d "Täglicher Check: Bot ist aktiv. $(TZ='Europe/Berlin' date '+%Y-%m-%d')" \
             "$NTFY_URL"
