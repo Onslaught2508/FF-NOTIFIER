@@ -6,6 +6,7 @@ import os
 import time
 import json
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_FILE  = os.path.join(BASE_DIR, "bot.log")
@@ -112,7 +113,7 @@ def send_ntfy(title, message, priority="urgent", tags="white_check_mark,shopping
 
 
 def main():
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.now(ZoneInfo("Europe/Berlin")).strftime("%Y-%m-%d %H:%M %Z")
     results = []
 
     for p in PRODUCTS:
